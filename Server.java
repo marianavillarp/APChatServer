@@ -4,15 +4,32 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.ArrayList;
 
 import javax.swing.JTextArea;
+
+class OnlineClient implements Serializable{
+	
+	private final String name;
+	
+	public OnlineClient(String name) {
+		this.name = name;
+	}
+	
+	public String getName() {
+		return name;
+	}
+}
 
 class ClientHandler extends Thread {
 
@@ -33,14 +50,11 @@ class ClientHandler extends Thread {
 	    InputStream is = s.getInputStream();
 	    BufferedReader br = new BufferedReader (new InputStreamReader(is));
 	    out = new PrintWriter(s.getOutputStream(),true);
-	    
 	    String client_msg = br.readLine();
 	    set_client_name(client_msg);
 	    
 	    messageChat.append("[" + client_name + "]\n" );
 	    client_msg = "[" + client_name + "] has joined";
-//	    broadcast_msg(client_msg);
-//	    client_msg = br.readLine();
 	    
 	    while (client_msg != null) {
 	    	messageChat.append(client_msg + "\n");
@@ -49,9 +63,17 @@ class ClientHandler extends Thread {
 	      }
 	    }
 	    catch (IOException ioe) {
-	      ioe.printStackTrace();
+	      System.out.println("Client Disconnected");
+	      server.online_threads.remove(this);
 	    }
-	    messageChat.append("[" + client_name + "] Disconnected\n");
+	    messageChat.append("[" + client_name + "] disconnected\n");
+	    //this.interrupt();
+	    //try {
+//			s.close();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	} // end of run()
 	
 	void set_client_name(String name) {
@@ -66,8 +88,8 @@ class ClientHandler extends Thread {
 
 class StartServerT extends Thread {
 	private JTextArea messageChat;
-	private boolean end;
-	public Set<ClientHandler> online_clients = new HashSet<>();
+	public ArrayList<ClientHandler> online_threads = new ArrayList<ClientHandler>();
+	public ArrayList<OnlineClient> online_clients = new ArrayList<OnlineClient>();
 	ServerSocket server;
 	PrintWriter out;
 	
@@ -81,10 +103,13 @@ class StartServerT extends Thread {
 			messageChat.append("Server running...\n");
 			while (true) {
 	            Socket mySocket = server.accept();
+	            updateOnlineClients();
+	            ObjectOutputStream oos = new ObjectOutputStream(mySocket.getOutputStream());
+	            oos.writeObject(online_clients);
 	            out = new PrintWriter(mySocket.getOutputStream(),true);
 	            out.println("Connection Stablished!\n");
 	            ClientHandler hc = new ClientHandler(mySocket, this, messageChat);
-	            this.online_clients.add(hc);
+	            this.online_threads.add(hc);
 	            hc.start();
 	         }
 		}
@@ -94,11 +119,17 @@ class StartServerT extends Thread {
 	}
 	
 	void broadcast_msg(String msg) {
-		for (ClientHandler client : online_clients) {
+		for (ClientHandler client : online_threads) {
 			client.send_msg(msg);
 		}
 	}
-	
+	public void updateOnlineClients() {
+		online_clients.clear();
+		for (ClientHandler client: online_threads) {
+			online_clients.add(new OnlineClient(client.client_name));
+		}
+		online_clients.forEach((client)-> System.out.println(client.getName()));
+	}
 }
 
 class Server {
@@ -112,13 +143,18 @@ class Server {
 		serversocket.start();
 	}
 	
-	public void sendMessage(String message, Client client) {
+	public void removeUser(String name) {
+		ArrayList<ClientHandler> online_clients = new ArrayList<ClientHandler>(serversocket.online_threads);
+		for (ClientHandler client: online_clients) {
+			if (client.client_name == name) {
+				//ArrayUtils.removeElement(serversocket.online_clients, client);
+			}
+		}
 		
 	}
 	public void closeServer(JTextArea messageChat) throws IOException {
 		serversocket.server.close();
 		serversocket.interrupt();
-		
-		
 	}
+	
 }

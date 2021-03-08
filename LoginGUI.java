@@ -12,6 +12,7 @@ import javax.swing.JTextPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
@@ -22,6 +23,8 @@ import javax.swing.DropMode;
 import java.awt.Panel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Canvas;
 import java.awt.ScrollPane;
 
@@ -75,17 +78,20 @@ public class LoginGUI extends JFrame {
 		loginPane.add(label);
 		
 		JTextField userText = new JTextField();
+		userText.setText("mar");
 		userText.setBackground(new Color(128, 128, 128));
 		userText.setBounds(160, 122, 209, 30);
 		loginPane.add(userText);
 		
 		portText = new JTextField();
+		portText.setText("7000");
 		portText.setBackground(new Color(128, 128, 128));
 		portText.setBounds(160, 203, 209, 30);
 		loginPane.add(portText);
 		portText.setColumns(10);
 		
 		IpText = new JTextField();
+		IpText.setText("127.0.0.1");
 		IpText.setBackground(new Color(128, 128, 128));
 		IpText.setBounds(160, 163, 209, 30);
 		loginPane.add(IpText);
@@ -120,15 +126,31 @@ public class LoginGUI extends JFrame {
 		btnNewButton.setBounds(119, 289, 155, 36);
 		loginPane.add(btnNewButton);
 		
+		JButton exit_btn = new JButton("Exit");
+		exit_btn.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		exit_btn.setBounds(154, 335, 85, 21);
+		exit_btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
+		loginPane.add(exit_btn);
+		
 	}
 	
 	public void submitData(String user, int port) {
-		c = new Client(user,port);
-		ClientGUI frame2 = new ClientGUI(c);
-		frame2.setVisible(true);
-		c.contactServer(frame2.messageArea);
-		frame.setVisible(false);
+		
+		try{
+			c = new Client(user,port);
+			ClientGUI frame2 = new ClientGUI(c);
+			c.contactServer(frame2.messageArea,frame2);
+			frame2.setVisible(true);
+			frame.setVisible(false);
+			frame2.setTitle("Chat server [" + user + "]");
+		}
+        catch (IOException ioe) {
+        	c = null;
+        	JOptionPane.showMessageDialog(frame, "Server unavailable");
+		}
 	}
-	
-	
 }

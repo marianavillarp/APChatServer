@@ -40,6 +40,7 @@ public class ServerGUI extends JFrame {
 	private JPanel contentPane;
 	JTextArea messageChat;
 	Server server;
+	boolean connected = false;
 	
 	/**
 	 * Launch the application.
@@ -68,37 +69,50 @@ public class ServerGUI extends JFrame {
 		contentPane.setBackground(Color.BLACK);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		contentPane.setLayout(null);
 		Server server = new Server();
 		
 		JButton btnConnect = new JButton("Start");
+		btnConnect.setBounds(227, 10, 132, 21);
 		btnConnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		btnConnect.setBounds(127, 10, 97, 21);
 		btnConnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-					server.startServer(messageChat);
-				} catch (IOException e1) {
-					System.out.println("Error server");
+				if (!connected) {
+					try {
+						server.startServer(messageChat);
+						btnConnect.setText("Disconnect");
+						connected = true;
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				} else {
+					try {
+						server.closeServer(messageChat);
+						btnConnect.setText("Start");
+						connected = false;
+					} catch (IOException e1) {
+						System.out.println("Error end");
+					}
 				}
 			}
+				
 			
 		});
+		contentPane.setLayout(null);
 		contentPane.add(btnConnect);
 		
-		JButton btnDisconnect = new JButton("Disconnect");
-		btnDisconnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		btnDisconnect.setBounds(345, 10, 110, 21);
-		btnDisconnect.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					server.closeServer(messageChat);
-				} catch (IOException e1) {
-					System.out.println("Error end");
-				}
-			}
-		});
-		contentPane.add(btnDisconnect);
+//		JButton btnDisconnect = new JButton("Disconnect");
+//		btnDisconnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
+//		btnDisconnect.setBounds(345, 10, 110, 21);
+//		btnDisconnect.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent e) {
+//				try {
+//					server.closeServer(messageChat);
+//				} catch (IOException e1) {
+//					System.out.println("Error end");
+//				}
+//			}
+//		});
+//		contentPane.add(btnDisconnect);
 		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(54, 56, 457, 260);
