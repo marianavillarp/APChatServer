@@ -1,36 +1,21 @@
-package test_client;
+package COMP1549_G4;
 
-import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.EventQueue;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.border.EmptyBorder;
-
-import java.awt.GridLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Scanner;
 
-import javax.swing.JLabel;
-import java.awt.Color;
-import java.awt.Font;
-import javax.swing.JTextPane;
 import javax.swing.JButton;
-import javax.swing.JScrollBar;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
 public class ServerGUI extends JFrame {
 
@@ -38,9 +23,9 @@ public class ServerGUI extends JFrame {
     PrintWriter out;
 	
 	private JPanel contentPane;
-	JTextArea messageChat;
-	Server server;
-	boolean connected = false;
+	public JTextArea serverScreen;
+	public Server server;
+	private boolean connected = false;
 	
 	/**
 	 * Launch the application.
@@ -69,28 +54,41 @@ public class ServerGUI extends JFrame {
 		contentPane.setBackground(Color.BLACK);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		Server server = new Server();
+		
+		
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(54, 56, 457, 260);
+		contentPane.add(scrollPane);
+		
+		serverScreen = new JTextArea();
+		serverScreen.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		serverScreen.setForeground(Color.WHITE);
+		serverScreen.setBackground(Color.DARK_GRAY);
+		scrollPane.setViewportView(serverScreen);
+		serverScreen.setEditable(false);
+		
 		
 		JButton btnConnect = new JButton("Start");
-		btnConnect.setBounds(227, 10, 132, 21);
+		btnConnect.setBounds(54, 10, 142, 25);
 		btnConnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		btnConnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!connected) {
 					try {
-						server.startServer(messageChat);
+						server = new Server(serverScreen);
+						server.startServer();
 						btnConnect.setText("Disconnect");
 						connected = true;
-					} catch (IOException e1) {
-						e1.printStackTrace();
+					} catch (IOException ioe) {
 					}
 				} else {
 					try {
-						server.closeServer(messageChat);
+						server.closeServer();
 						btnConnect.setText("Start");
 						connected = false;
 					} catch (IOException e1) {
-						System.out.println("Error end");
+						System.out.println("Could not close the server");
 					}
 				}
 			}
@@ -100,29 +98,20 @@ public class ServerGUI extends JFrame {
 		contentPane.setLayout(null);
 		contentPane.add(btnConnect);
 		
-//		JButton btnDisconnect = new JButton("Disconnect");
-//		btnDisconnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
-//		btnDisconnect.setBounds(345, 10, 110, 21);
-//		btnDisconnect.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent e) {
-//				try {
-//					server.closeServer(messageChat);
-//				} catch (IOException e1) {
-//					System.out.println("Error end");
-//				}
-//			}
-//		});
-//		contentPane.add(btnDisconnect);
-		
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(54, 56, 457, 260);
-		contentPane.add(scrollPane);
-		
-		messageChat = new JTextArea();
-		messageChat.setForeground(Color.WHITE);
-		messageChat.setBackground(Color.DARK_GRAY);
-		scrollPane.setViewportView(messageChat);
-		messageChat.setEditable(false);
+		JButton getDetailsBtn = new JButton("Server details");
+		getDetailsBtn.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		getDetailsBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					JOptionPane.showMessageDialog(null,"Current Admin: " + server.getCoordinator() + "\n Server Port: " + server.getPort());
+				}
+				catch (NullPointerException ne) {
+					JOptionPane.showMessageDialog(null, "Server currently disconnected");
+				}
+			}
+		});
+		getDetailsBtn.setBounds(375, 10, 136, 25);
+		contentPane.add(getDetailsBtn);
 	}
 }
 

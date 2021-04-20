@@ -1,125 +1,83 @@
-package test_client;
+package COMP1549_G4;
 
-import java.util.ArrayList;
-import java.util.Scanner;
-
-import javax.swing.DefaultListModel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.text.BadLocationException;
-
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 
-class HandleMsgs extends Thread {
-	
-	Socket mySocket = null;
-	JTextArea messageArea;
-	public Scanner in;
-	ObjectInputStream inn;
-	
-	public HandleMsgs(Socket mySocket, JTextArea messageArea)  {
-		this.mySocket = mySocket;
-		this.messageArea = messageArea;
-	}
-	
-	
-	public void run() {
-		try {
-			in = new Scanner(mySocket.getInputStream());
-            String str = in.nextLine();
-            while (str != null) {
-            	messageArea.append(str + "\n");
-            	str = in.nextLine();
-            }
-		}
-		catch (IOException ioe) {
-		      ioe.printStackTrace();
-		}
-	}
-}
+import javax.swing.JTextArea;
+import javax.swing.text.BadLocationException;
 
-class OnlineClients extends Thread{
-	Socket mySocket;
-	ClientGUI frame;
-	InputStream in;
+public class Client {
 	
-	public OnlineClients(Socket mySocket, ClientGUI frame) {
-		this.mySocket = mySocket;
-		this.frame = frame;
-	}
-	
-	public void run() {
-		try {
-			in = mySocket.getInputStream();
-			ObjectInputStream ois = new ObjectInputStream(mySocket.getInputStream());
-		    ArrayList<OnlineClient> online_clients = (ArrayList<OnlineClient>) ois.readObject();
-		    DefaultListModel model = new DefaultListModel();
-		    online_clients.forEach((client)-> model.addElement(client.getName()));
-		    frame.onlineClients.setModel(model);
-		    
-		    
-		}
-		catch (IOException oie) {
-			System.out.println("meh1");
-			
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			System.out.println("meh");
-		}
-	}
-	
-}
-
-class Client {
-	
-	private PrintWriter out;
-	private Socket socket;
-	public String name;
+	public PrintWriter out;
+	public Socket socket;
+	private String name;
 	public int port;
-	ClientGUI clientFrame; //after disconnect go back to login window
+	public String ip;
+	public ClientGUI clientFrame;
+	public boolean isCoordinator = false;
 	
-	public Client(String name, int port) {
+	public Client(String name, String ip, int port) {
 		this.name = name;
 		this.port = port;
+		this.ip = ip;
 	}
 	
-	public void contactServer(JTextArea messageArea, ClientGUI frame) throws IOException {
-        socket = new Socket("127.0.0.1", port);
+	public void contactServer() throws IOException {
+        /*
+         * Contact server method
+         */
+		socket = new Socket(ip, port); 
+		clientFrame = new ClientGUI(this);
         OutputStream os = socket.getOutputStream();
         out = new PrintWriter(os, true) ;
-        out.println(name);
+        out.println(this.getUsername());
+        out.println(ip);
         
-        this.clientFrame = frame;
-        OnlineClients ocl = new OnlineClients(socket,clientFrame);
+        /*
+         * Receive online clients list
+         */
+        ReadOnlineClients ocl = new ReadOnlineClients(socket,clientFrame);
         ocl.start();
-        
-        HandleMsgs hmsg = new HandleMsgs(socket,messageArea);
+
+        /*
+         * Thread to handle messages
+         */
+        MessageHandler hmsg = new MessageHandler(this, ocl);
         hmsg.start();
 	}
 	
-	public void sendMessage(JTextArea messageChat) {
+	public void sendMessage(JTextArea messageChat, boolean pm, Object sUser) {
+		/*
+		 * Read message from ClientGUI and send it to the server
+		 */
+		
 		int inputLines = messageChat.getLineCount();
 		try {
+			
+			String message = messageChat.getText().trim();
+            if(message.isEmpty()) {
+                return;
+            }
 			for (int i = 0 ; i < inputLines; i++) {
 				int start = messageChat.getLineStartOffset(i);
                 int end = messageChat.getLineEndOffset(i);
                 String str = messageChat.getText(start, end - start);
-                out.println("[" + this.name + "] " + str);
-                messageChat.setText("");
+                
+                if (pm == false) {
+                	out.println("[" + this.name.toUpperCase() + " < everyone] " + str);
+                    messageChat.setText("");
+                } else if (pm==true && sUser.toString() != null) {
+                	out.println("#PRIVATEMSG");
+                	out.println(sUser.toString());
+                	out.println("[" + this.name.toUpperCase() + " > " + sUser.toString().toUpperCase() +"] " + str);
+                	messageChat.setText("");
+                }
 			}
 		} 
 		catch (BadLocationException ble) {
-			System.out.println("no more messages");
+			System.out.println("No more messages");
 		}
 		
 	}
@@ -128,5 +86,39 @@ class Client {
 		return name;
 	}
 	
+	/*
+	 * Coordinator methods
+	 */
+	public void setCoordinator() {
+		isCoordinator = true;
+		setCoordinatorFaculties();
+		
+	}
 	
+	private void setCoordinatorFaculties() {
+		if (isCoordinator == true) {
+			clientFrame.adminBtn.setVisible(true);
+		}
+	}
+	
+	public void removeUser(Object sUser) { // Allow the coordiator to remove users
+		if (isCoordinator == true) {
+			String sUsername = sUser.toString();
+			out.println("#USEREMOVE");	// special code to server
+			out.println(sUsername);
+		}
+	}
+
+	/* 
+	 * Disconnect from server
+	 */
+	public void endConnection() {
+		try {
+			out.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.exit(0);
+	}
 }

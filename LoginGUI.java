@@ -1,32 +1,23 @@
-package test_client;
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
+package COMP1549_G4;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import java.awt.Label;
-import java.awt.Font;
 import java.awt.Color;
-import javax.swing.JTextPane;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.Label;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.Socket;
+import java.net.ConnectException;
 import java.util.Scanner;
-import java.awt.event.ActionEvent;
-import javax.swing.JTextArea;
-import java.awt.SystemColor;
-import javax.swing.DropMode;
-import java.awt.Panel;
+
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-
-import java.awt.Canvas;
-import java.awt.ScrollPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 public class LoginGUI extends JFrame {
 
@@ -34,13 +25,11 @@ public class LoginGUI extends JFrame {
     PrintWriter out;
     
 	private JPanel loginPane;
-	private JTextField textField;
-	private JTextField textField_1;
-	private JTextField textField_2;
-	private JTextField textField_3;
+	JTextField userText;
 	private JTextField portText;
 	private JTextField IpText;
-	Client c;
+	String user;
+	public Client c;
 	static LoginGUI frame;
 
 	/**
@@ -52,6 +41,7 @@ public class LoginGUI extends JFrame {
 				try {
 					frame = new LoginGUI();
 					frame.setVisible(true);
+					frame.setTitle("Contact Server");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -71,62 +61,66 @@ public class LoginGUI extends JFrame {
 		setContentPane(loginPane);
 		loginPane.setLayout(null);
 		
-		Label label = new Label("\r\nWelcome!\r\n");
-		label.setBounds(119, 29, 161, 47);
-		label.setForeground(new Color(255, 255, 255));
-		label.setFont(new Font("Tahoma", Font.BOLD, 33));
-		loginPane.add(label);
+		Label welcomeLbl = new Label("\r\nWelcome!\r\n");
+		welcomeLbl.setBounds(119, 29, 161, 47);
+		welcomeLbl.setForeground(new Color(255, 255, 255));
+		welcomeLbl.setFont(new Font("Tahoma", Font.BOLD, 33));
+		loginPane.add(welcomeLbl);
 		
-		JTextField userText = new JTextField();
-		userText.setText("mar");
+		userText = new JTextField();
 		userText.setBackground(new Color(128, 128, 128));
 		userText.setBounds(160, 122, 209, 30);
 		loginPane.add(userText);
 		
 		portText = new JTextField();
-		portText.setText("7000");
 		portText.setBackground(new Color(128, 128, 128));
 		portText.setBounds(160, 203, 209, 30);
 		loginPane.add(portText);
 		portText.setColumns(10);
 		
 		IpText = new JTextField();
-		IpText.setText("127.0.0.1");
 		IpText.setBackground(new Color(128, 128, 128));
 		IpText.setBounds(160, 163, 209, 30);
 		loginPane.add(IpText);
 		IpText.setColumns(10);
 		
-		JLabel lblNewLabel = new JLabel("Enter User ID:");
-		lblNewLabel.setForeground(new Color(255, 255, 255));
-		lblNewLabel.setFont(new Font("Century Gothic", Font.BOLD, 17));
-		lblNewLabel.setBounds(10, 115, 140, 36);
-		loginPane.add(lblNewLabel);
+		JLabel idLbl = new JLabel("Enter User ID:");
+		idLbl.setForeground(new Color(255, 255, 255));
+		idLbl.setFont(new Font("Century Gothic", Font.BOLD, 17));
+		idLbl.setBounds(10, 115, 140, 36);
+		loginPane.add(idLbl);
 		
-		JLabel lblNewLabel_1 = new JLabel("Enter IP Address:");
-		lblNewLabel_1.setForeground(new Color(255, 255, 255));
-		lblNewLabel_1.setFont(new Font("Century Gothic", Font.BOLD, 17));
-		lblNewLabel_1.setBounds(10, 159, 155, 36);
-		loginPane.add(lblNewLabel_1);
+		JLabel iPlbl = new JLabel("Enter IP Address:");
+		iPlbl.setForeground(new Color(255, 255, 255));
+		iPlbl.setFont(new Font("Century Gothic", Font.BOLD, 17));
+		iPlbl.setBounds(10, 159, 155, 36);
+		loginPane.add(iPlbl);
 		
-		JLabel lblNewLabel_2 = new JLabel("Enter Port ID:");
-		lblNewLabel_2.setForeground(new Color(255, 255, 255));
-		lblNewLabel_2.setFont(new Font("Century Gothic", Font.BOLD, 17));
-		lblNewLabel_2.setBounds(10, 200, 136, 36);
-		loginPane.add(lblNewLabel_2);
+		JLabel portLbl = new JLabel("Enter Port ID:");
+		portLbl.setForeground(new Color(255, 255, 255));
+		portLbl.setFont(new Font("Century Gothic", Font.BOLD, 17));
+		portLbl.setBounds(10, 200, 136, 36);
+		loginPane.add(portLbl);
 		
-		JButton btnNewButton = new JButton("LOGIN");
-		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		btnNewButton.addActionListener(new ActionListener() {
+		JButton connectBtn = new JButton("CONNECT");
+		connectBtn.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		user = userText.getText();
+		connectBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int port = Integer.parseInt(portText.getText());
-				submitData(userText.getText(),port);
+				if (!userText.getText().equals("") && !portText.getText().equals("") && !IpText.getText().equals("")) {
+					int port = Integer.parseInt(portText.getText());
+					submitData(userText.getText(),IpText.getText(),port);
+				}
+				else {
+					JOptionPane.showMessageDialog(null, "Please, enter valid user details", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+				
 			}
 		});
-		btnNewButton.setBounds(119, 289, 155, 36);
-		loginPane.add(btnNewButton);
+		connectBtn.setBounds(119, 289, 155, 36);
+		loginPane.add(connectBtn);
 		
-		JButton exit_btn = new JButton("Exit");
+		JButton exit_btn = new JButton("Exit"); // Provides option for user to exit the login screen
 		exit_btn.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		exit_btn.setBounds(154, 335, 85, 21);
 		exit_btn.addActionListener(new ActionListener() {
@@ -136,21 +130,34 @@ public class LoginGUI extends JFrame {
 		});
 		loginPane.add(exit_btn);
 		
+		JLabel lblNewLabel_3 = new JLabel("Server Port - 7000");
+		lblNewLabel_3.setForeground(Color.WHITE);
+		lblNewLabel_3.setFont(new Font("Century Gothic", Font.BOLD, 17));
+		lblNewLabel_3.setBounds(182, 244, 165, 21);
+		loginPane.add(lblNewLabel_3);
+		
+		
 	}
 	
-	public void submitData(String user, int port) {
-		
-		try{
-			c = new Client(user,port);
-			ClientGUI frame2 = new ClientGUI(c);
-			c.contactServer(frame2.messageArea,frame2);
-			frame2.setVisible(true);
-			frame.setVisible(false);
-			frame2.setTitle("Chat server [" + user + "]");
+	/*
+	 * Send details to start connection
+	 */
+	public void submitData(String user, String ip, int port) {
+		if (!ip.equals("127.0.0.1")) {
+			JOptionPane.showMessageDialog(frame, "Wrong IP address");
 		}
-        catch (IOException ioe) {
-        	c = null;
-        	JOptionPane.showMessageDialog(frame, "Server unavailable");
+		else {
+			try{
+				c = new Client(user,ip,port);
+				c.contactServer();
+				c.clientFrame.setVisible(true);
+				frame.setVisible(false);
+				c.clientFrame.setTitle("Chat server [" + user + "]");
+			}
+	        catch (IOException ioe) {
+	        	c = null;
+	        	JOptionPane.showMessageDialog(frame, "Server unavailable");
+			}
 		}
 	}
 }
